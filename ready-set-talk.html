@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ready! Set! Talk! — One-Minute Topic Wheel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --ink-soft: #4a4a6a;
+    --ink-muted: #8888aa;
+    --paper: #faf9f6;
+    --paper-warm: #f2efe8;
+    --paper-card: #ffffff;
+    --accent: #e85d3a;
+    --accent-light: #fde8e2;
+    --accent2: #3a7de8;
+    --accent2-light: #e2ecfd;
+    --accent3: #27ae72;
+    --accent3-light: #e2f7ee;
+    --yellow: #f5c842;
+    --yellow-light: #fef9e2;
+    --border: rgba(26,26,46,0.1);
+    --border-strong: rgba(26,26,46,0.22);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 2px 20px rgba(26,26,46,0.08);
+    --shadow-lg: 0 8px 40px rgba(26,26,46,0.14);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* --- BG PATTERN --- */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(232,93,58,0.06) 0%, transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(58,125,232,0.06) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(39,174,114,0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* dotted grid */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image: radial-gradient(circle, rgba(26,26,46,0.12) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  /* --- HEADER --- */
+  .header { text-align: center; margin-bottom: 3rem; }
+
+  .header-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid rgba(232,93,58,0.2);
+    border-radius: 100px;
+    padding: 5px 14px;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .header-badge .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.7; }
+  }
+
+  .header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2.4rem, 6vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.6rem;
+  }
+
+  .header h1 em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 300;
+  }
+
+  .header p {
+    font-size: 16px;
+    color: var(--ink-soft);
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* --- SCREENS --- */
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeUp 0.35s ease both; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- GRADE SELECTION --- */
+  .section-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-muted); margin-bottom: 1rem;
+  }
+
+  .grade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(98px, 1fr));
+    gap: 12px;
+    margin-bottom: 0;
+  }
+
+  .grade-btn {
+    position: relative; overflow: hidden;
+    background: var(--paper-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem 0.75rem 1.2rem;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.18s ease, border-color 0.18s, box-shadow 0.18s;
+    box-shadow: var(--shadow);
+  }
+
+  .grade-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .grade-btn:active:not(:disabled) { transform: translateY(-1px); }
+
+  .grade-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+  .grade-btn .num {
+    font-family: 'Fraunces', serif;
+    font-size: 2rem; font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .grade-btn .lbl {
+    font-size: 11px; font-weight: 500;
+    color: var(--ink-muted);
+    display: block;
+  }
+
+  .grade-btn .soon-tag {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    background: var(--paper-warm);
+    color: var(--ink-muted);
+    border-radius: 100px;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+  }
+
+  .grade-btn.grade-7 { border-color: var(--accent); }
+  .grade-btn.grade-7 .num { color: var(--accent); }
+  .grade-btn.grade-7::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--accent-light); opacity: 0.35;
+    pointer-events: none;
+  }
+
+  /* --- WHEEL SCREEN --- */
+  .wheel-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .back-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--paper-card);
+    cursor: pointer; font-size: 18px; color: var(--ink-soft);
+    transition: all 0.15s; flex-shrink: 0;
+    box-shadow: var(--shadow);
+  }
+  .back-btn:hover { border-color: var(--border-strong); color: var(--ink); transform: translateX(-2px); }
+
+  .wheel-header-info { flex: 1; }
+  .wheel-header-info h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.4rem; font-weight: 600;
+    color: var(--ink); line-height: 1.2;
+  }
+  .wheel-header-info p { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
+
+  .wheel-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 600px) {
+    .wheel-layout { grid-template-columns: 1fr; }
+  }
+
+  /* Wheel container */
+  .wheel-outer {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .wheel-frame {
+    position: relative;
+    width: 100%; max-width: 320px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+  }
+
+  #wheel-canvas {
+    display: block; width: 100%; height: 100%;
+    border-radius: 50%;
+    filter: drop-shadow(0 8px 24px rgba(26,26,46,0.16));
+  }
+
+  .wheel-pointer {
+    position: absolute;
+    top: -6px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 11px solid transparent;
+    border-right: 11px solid transparent;
+    border-top: 26px solid var(--ink);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    z-index: 2;
+  }
+
+  .wheel-center {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--paper-card);
+    border: 3px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    z-index: 3;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  .wheel-center:hover { transform: translate(-50%, -50%) scale(1.1); }
+
+  /* Right panel */
+  .wheel-panel { display: flex; flex-direction: column; gap: 1rem; }
+
+  /* Progress */
+  .progress-card {
+    background: var(--paper-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    box-shadow: var(--shadow);
+  }
+
+  .progress-top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 0.6rem;
+  }
+
+  .progress-top span:first-child { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+  .progress-top span:last-child { font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 700; color: var(--ink); }
+
+  .progress-track {
+    height: 7px; background: var(--paper-warm);
+    border-radius: 100px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .progress-fill {
+    height: 100%; border-radius: 100px;
+    background: var(--accent);
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+  }
+
+  /* Spin button */
+  .spin-btn {
+    width: 100%; padding: 1rem;
+    background: var(--ink);
+    color: #fff;
+    border: none; border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(26,26,46,0.25);
+    letter-spacing: 0.01em;
+  }
+
+  .spin-btn:hover:not(:disabled) {
+    background: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(232,93,58,0.35);
+  }
+
+  .spin-btn:active:not(:disabled) { transform: translateY(0); }
+
+  .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .spin-btn .spin-icon {
+    font-size: 20px; transition: transform 0.3s;
+  }
+
+  .spin-btn:hover .spin-icon { transform: rotate(30deg); }
+
+  /* Result card */
+  .result-card {
+    background: var(--paper-card);
+    border: 2px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+    box-shadow: 0 4px 20px rgba(232,93,58,0.12);
+    display: none;
+    animation: popIn 0.3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.88); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .result-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.4rem;
+  }
+
+  .result-topic {
+    font-family: 'Fraunces', serif;
+    font-size: 1.3rem; font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+    margin-bottom: 0.9rem;
+  }
+
+  .confirm-btn {
+    width: 100%; padding: 0.75rem;
+    background: var(--accent);
+    color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform 0.15s, background 0.15s;
+  }
+
+  .confirm-btn:hover { background: #d4512f; transform: translateY(-1px); }
+
+  /* Empty state */
+  .empty-card {
+    display: none;
+    text-align: center;
+    background: var(--paper-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem 1.2rem;
+    box-shadow: var(--shadow);
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .empty-emoji { font-size: 2rem; margin-bottom: 0.5rem; }
+  .empty-card p { font-size: 14px; color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.5; }
+
+  .rewind-btn {
+    width: 100%; padding: 0.85rem;
+    background: var(--paper-warm);
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.15s, transform 0.15s;
+  }
+
+  .rewind-btn:hover { background: var(--border); transform: translateY(-1px); }
+
+  /* Topic chips below wheel */
+  .chips-wrap {
+    margin-top: 1.5rem;
+    display: flex; flex-wrap: wrap; gap: 6px;
+    max-height: 140px; overflow-y: auto;
+    padding: 2px;
+  }
+
+  .chip {
+    font-size: 11px; font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+    transition: all 0.2s;
+  }
+
+  .chip.done {
+    text-decoration: line-through;
+    opacity: 0.4;
+  }
+
+  .chip.active-chip {
+    background: var(--accent-light);
+    border-color: rgba(232,93,58,0.3);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* scrollbar */
+  .chips-wrap::-webkit-scrollbar { width: 4px; }
+  .chips-wrap::-webkit-scrollbar-track { background: transparent; }
+  .chips-wrap::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+  /* Timer */
+  .timer-wrap {
+    background: var(--paper-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    box-shadow: var(--shadow);
+    display: none;
+  }
+
+  .timer-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .timer-top span { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+
+  .timer-display {
+    font-family: 'Fraunces', serif;
+    font-size: 2.5rem; font-weight: 700; color: var(--ink);
+    text-align: center; line-height: 1;
+    margin-bottom: 0.75rem;
+    transition: color 0.3s;
+  }
+
+  .timer-display.urgent { color: var(--accent); }
+
+  .timer-track {
+    height: 6px; background: var(--paper-warm);
+    border-radius: 100px; overflow: hidden;
+    border: 1px solid var(--border);
+    margin-bottom: 0.75rem;
+  }
+
+  .timer-fill {
+    height: 100%; border-radius: 100px;
+    background: var(--accent3);
+    transition: width 1s linear, background 0.5s;
+    width: 100%;
+  }
+
+  .timer-fill.urgent { background: var(--accent); }
+
+  .timer-btns { display: flex; gap: 8px; }
+
+  .timer-btn {
+    flex: 1; padding: 0.55rem;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--paper-warm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; color: var(--ink);
+    transition: background 0.15s;
+  }
+
+  .timer-btn:hover { background: var(--border); }
+
+  .timer-btn.start-timer {
+    background: var(--accent3-light);
+    border-color: rgba(39,174,114,0.25);
+    color: var(--accent3);
+  }
+
+  .timer-btn.start-timer:hover { background: rgba(39,174,114,0.15); }
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-badge">
+      <span class="dot"></span>
+      English Speaking Practice
+    </div>
+    <h1>Ready! Set! <em>Talk!</em></h1>
+    <p>One-minute speech topics for English class — spin the wheel, get your topic, start the timer.</p>
+  </header>
+
+  <!-- GRADE SELECTION SCREEN -->
+  <div id="grade-screen" class="screen active">
+    <p class="section-label">Select your class level</p>
+    <div class="grade-grid" id="grade-grid"></div>
+  </div>
+
+  <!-- WHEEL SCREEN -->
+  <div id="wheel-screen" class="screen">
+    <div class="wheel-header">
+      <button class="back-btn" id="back-btn" aria-label="Back">&#8592;</button>
+      <div class="wheel-header-info">
+        <h2 id="wheel-title"></h2>
+        <p id="wheel-subtitle"></p>
+      </div>
+    </div>
+
+    <div class="wheel-layout">
+      <!-- Left: Wheel -->
+      <div class="wheel-outer">
+        <div style="width:100%;">
+          <div class="wheel-frame">
+            <div class="wheel-pointer"></div>
+            <canvas id="wheel-canvas" width="480" height="480"></canvas>
+            <div class="wheel-center" id="wheel-center-btn" title="Spin!">&#9654;</div>
+          </div>
+          <div class="chips-wrap" id="chips-wrap"></div>
+        </div>
+      </div>
+
+      <!-- Right: Controls -->
+      <div class="wheel-panel">
+
+        <!-- Progress -->
+        <div class="progress-card">
+          <div class="progress-top">
+            <span>Topics used</span>
+            <span id="progress-count">0 / 0</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <!-- Spin button -->
+        <button class="spin-btn" id="spin-btn">
+          <span class="spin-icon">&#9650;</span>
+          Spin the wheel
+        </button>
+
+        <!-- Result -->
+        <div class="result-card" id="result-card">
+          <p class="result-label">&#10024; Your topic</p>
+          <p class="result-topic" id="result-topic"></p>
+          <button class="confirm-btn" id="confirm-btn">
+            &#10003;&nbsp; Use this topic — remove from wheel
+          </button>
+        </div>
+
+        <!-- Timer -->
+        <div class="timer-wrap" id="timer-wrap">
+          <div class="timer-top">
+            <span>&#9202; 1-minute timer</span>
+          </div>
+          <div class="timer-display" id="timer-display">1:00</div>
+          <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+          <div class="timer-btns">
+            <button class="timer-btn start-timer" id="timer-start-btn">Start</button>
+            <button class="timer-btn" id="timer-reset-btn">Reset</button>
+          </div>
+        </div>
+
+        <!-- Empty -->
+        <div class="empty-card" id="empty-card">
+          <div class="empty-emoji">&#127881;</div>
+          <p>All <strong id="empty-count"></strong> topics have been used! Great work!</p>
+          <button class="rewind-btn" id="rewind-btn">
+            &#8635;&nbsp; Reset — start over with all topics
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const TOPICS = {
+  7: [
+    "learning English","home schooling","your dream school","a new subject",
+    "Africa","Europe","South America","Asia",
+    "one thing you save money for","driving licence","space travel","future transportation",
+    "Christmas","Easter","Ramadan","faith",
+    "Halloween","Thanksgiving","New Year's Eve","a new holiday",
+    "being on a lonely island","life in mega cities","your travel experience","countries you'd like to visit",
+    "Fridays for Future","global warming","reducing plastic","war",
+    "teens and politics","you being the chancellor","democracy","extremism",
+    "rainforests","mass tourism","national parks","animal rights",
+    "a perfect winter","school uniforms","a perfect summer","the best season",
+    "things you can't buy with money","parents today","childhood in the past","values",
+    "first world problems","human rights","life without death","a world without religion",
+    "cinema","art","playing an instrument","museums",
+    "being 80 years old","your kindergarten experiences","one thing you'd never throw away","your daily activities",
+    "cooking","your dream house","fun parks","survival skills",
+    "aliens","the 21st century","the most important jobs","upcycling",
+    "Twitter / X","your neighborhood","your weekend plans","camping",
+    "life in ten years","life in 100 years","your favourite outdoor activity","street gangs",
+    "dancing","Hip Hop","traditions","culture shock",
+    "the latest news at school","a successful life","important events in your life","Instagram"
+  ]
+};
+
+const GRADES = [
+  { label: "5",  sub: "Klasse 5",  key: null },
+  { label: "6",  sub: "Klasse 6",  key: null },
+  { label: "7",  sub: "Klasse 7",  key: 7 },
+  { label: "8",  sub: "Klasse 8",  key: null },
+  { label: "9",  sub: "Klasse 9",  key: null },
+  { label: "10", sub: "Klasse 10", key: null },
+  { label: "OS", sub: "Oberstufe", key: null },
+];
+
+const SEGMENT_COLORS = [
+  "#fde8e2","#e2ecfd","#e2f7ee","#fef9e2","#f0e8fe","#e8f5fd","#fef0e2",
+  "#ffe8f0","#e8feee","#fdf5e8","#e8e8fe","#fde8f5"
+];
+
+const SEGMENT_STROKES = [
+  "#e85d3a","#3a7de8","#27ae72","#e8c23a","#7e3ae8","#3ab5e8",
+  "#e87e3a","#e83a7e","#3ae87e","#e8b53a","#3a3ae8","#e83ab5"
+];
+
+let state = {
+  all: [],
+  remaining: [],
+  done: [],
+  total: 0,
+  currentGrade: null,
+  currentTopic: null,
+  spinning: false,
+  angle: 0,
+};
+
+let timerState = { seconds: 60, running: false, interval: null };
+
+// DOM
+const gradeScreen = document.getElementById('grade-screen');
+const wheelScreen = document.getElementById('wheel-screen');
+const gradeGrid = document.getElementById('grade-grid');
+const backBtn = document.getElementById('back-btn');
+const spinBtn = document.getElementById('spin-btn');
+const confirmBtn = document.getElementById('confirm-btn');
+const rewindBtn = document.getElementById('rewind-btn');
+const resultCard = document.getElementById('result-card');
+const resultTopic = document.getElementById('result-topic');
+const emptyCard = document.getElementById('empty-card');
+const emptyCount = document.getElementById('empty-count');
+const wheelTitle = document.getElementById('wheel-title');
+const wheelSubtitle = document.getElementById('wheel-subtitle');
+const progressFill = document.getElementById('progress-fill');
+const progressCount = document.getElementById('progress-count');
+const chipsWrap = document.getElementById('chips-wrap');
+const canvas = document.getElementById('wheel-canvas');
+const ctx = canvas.getContext('2d');
+const timerWrap = document.getElementById('timer-wrap');
+const timerDisplay = document.getElementById('timer-display');
+const timerFill = document.getElementById('timer-fill');
+const timerStartBtn = document.getElementById('timer-start-btn');
+const timerResetBtn = document.getElementById('timer-reset-btn');
+const wheelCenterBtn = document.getElementById('wheel-center-btn');
+
+// BUILD GRADE BUTTONS
+GRADES.forEach(g => {
+  const btn = document.createElement('button');
+  btn.className = 'grade-btn' + (g.key === 7 ? ' grade-7' : '');
+  btn.innerHTML = `<span class="num">${g.label}</span><span class="lbl">${g.sub}</span>`;
+  if (!g.key) {
+    btn.innerHTML += `<span class="soon-tag">soon</span>`;
+    btn.disabled = true;
+  }
+  btn.addEventListener('click', () => startGrade(g));
+  gradeGrid.appendChild(btn);
+});
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGrade(g) {
+  state.currentGrade = g;
+  state.all = TOPICS[g.key] ? [...TOPICS[g.key]] : [];
+  state.remaining = shuffle(state.all);
+  state.done = [];
+  state.total = state.remaining.length;
+  state.angle = 0;
+  state.currentTopic = null;
+  state.spinning = false;
+
+  wheelTitle.textContent = `${g.sub} — One-Minute Topics`;
+  wheelSubtitle.textContent = `${state.total} topics ready to spin`;
+
+  resultCard.style.display = 'none';
+  emptyCard.style.display = 'none';
+  timerWrap.style.display = 'none';
+  spinBtn.style.display = 'flex';
+  spinBtn.disabled = false;
+
+  resetTimer();
+  buildChips();
+  updateProgress();
+  drawWheel();
+
+  gradeScreen.classList.remove('active');
+  wheelScreen.classList.add('active');
+  wheelScreen.style.animation = 'none';
+  requestAnimationFrame(() => { wheelScreen.style.animation = ''; wheelScreen.classList.remove('active'); wheelScreen.classList.add('active'); });
+}
+
+function buildChips() {
+  chipsWrap.innerHTML = '';
+  state.all.forEach(t => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = t;
+    chip.dataset.topic = t;
+    chipsWrap.appendChild(chip);
+  });
+}
+
+function updateChips() {
+  chipsWrap.querySelectorAll('.chip').forEach(c => {
+    const t = c.dataset.topic;
+    c.classList.remove('done', 'active-chip');
+    if (state.done.includes(t)) c.classList.add('done');
+    if (t === state.currentTopic) c.classList.add('active-chip');
+  });
+}
+
+function updateProgress() {
+  const used = state.done.length;
+  progressCount.textContent = `${used} / ${state.total}`;
+  progressFill.style.width = state.total ? (used / state.total * 100) + '%' : '0%';
+}
+
+function drawWheel() {
+  const n = state.remaining.length;
+  const cx = 240, cy = 240, r = 228;
+  ctx.clearRect(0, 0, 480, 480);
+
+  if (n === 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#f2efe8';
+    ctx.fill();
+    ctx.fillStyle = '#8888aa';
+    ctx.font = '500 18px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('All done!', cx, cy);
+    return;
+  }
+
+  const arc = (Math.PI * 2) / n;
+
+  for (let i = 0; i < n; i++) {
+    const start = state.angle + i * arc - Math.PI / 2;
+    const end = start + arc;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + arc / 2);
+
+    const fontSize = n <= 6 ? 14 : n <= 14 ? 12 : n <= 24 ? 10 : 8;
+    ctx.font = `500 ${fontSize}px DM Sans, sans-serif`;
+    ctx.fillStyle = SEGMENT_STROKES[i % SEGMENT_STROKES.length];
+    ctx.textAlign = 'right';
+
+    let label = state.remaining[i];
+    const maxLen = n <= 8 ? 22 : n <= 16 ? 18 : 14;
+    if (label.length > maxLen) label = label.substring(0, maxLen - 1) + '…';
+    ctx.fillText(label, r - 10, fontSize / 3);
+    ctx.restore();
+  }
+
+  // outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // center circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, 36, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+}
+
+function doSpin() {
+  if (state.spinning || state.remaining.length === 0) return;
+  state.spinning = true;
+  spinBtn.disabled = true;
+  resultCard.style.display = 'none';
+  timerWrap.style.display = 'none';
+  resetTimer();
+
+  const n = state.remaining.length;
+  const arc = (Math.PI * 2) / n;
+  const winIndex = Math.floor(Math.random() * n);
+
+  const fullSpins = (6 + Math.floor(Math.random() * 5)) * Math.PI * 2;
+  const targetOffset = (Math.PI * 2 - (winIndex * arc + arc / 2 - Math.PI / 2)) - (state.angle % (Math.PI * 2));
+  const totalRotation = fullSpins + ((targetOffset % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+  const duration = 3200 + Math.random() * 900;
+  const startTime = performance.now();
+  const startAngle = state.angle;
+
+  function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    state.angle = startAngle + totalRotation * easeOut(t);
+    drawWheel();
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      state.spinning = false;
+      state.currentTopic = state.remaining[winIndex];
+      resultTopic.textContent = '…' + state.currentTopic;
+      resultCard.style.display = 'block';
+      timerWrap.style.display = 'block';
+      updateChips();
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+spinBtn.addEventListener('click', doSpin);
+wheelCenterBtn.addEventListener('click', doSpin);
+
+confirmBtn.addEventListener('click', () => {
+  if (!state.currentTopic) return;
+  state.done.push(state.currentTopic);
+  state.remaining = state.remaining.filter(t => t !== state.currentTopic);
+  state.currentTopic = null;
+  resultCard.style.display = 'none';
+  updateProgress();
+  updateChips();
+
+  if (state.remaining.length === 0) {
+    drawWheel();
+    spinBtn.style.display = 'none';
+    timerWrap.style.display = 'none';
+    emptyCard.style.display = 'block';
+    emptyCount.textContent = state.total;
+  } else {
+    spinBtn.disabled = false;
+    drawWheel();
+  }
+});
+
+rewindBtn.addEventListener('click', () => {
+  state.remaining = shuffle(state.all);
+  state.done = [];
+  state.angle = 0;
+  state.currentTopic = null;
+  emptyCard.style.display = 'none';
+  spinBtn.style.display = 'flex';
+  spinBtn.disabled = false;
+  resultCard.style.display = 'none';
+  timerWrap.style.display = 'none';
+  resetTimer();
+  buildChips();
+  updateProgress();
+  drawWheel();
+});
+
+backBtn.addEventListener('click', () => {
+  wheelScreen.classList.remove('active');
+  gradeScreen.classList.add('active');
+  resetTimer();
+});
+
+// TIMER
+function resetTimer() {
+  clearInterval(timerState.interval);
+  timerState.running = false;
+  timerState.seconds = 60;
+  timerState.interval = null;
+  renderTimer();
+  timerStartBtn.textContent = 'Start';
+}
+
+function renderTimer() {
+  const s = timerState.seconds;
+  timerDisplay.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  timerFill.style.width = (s / 60 * 100) + '%';
+  const urgent = s <= 15;
+  timerDisplay.classList.toggle('urgent', urgent);
+  timerFill.classList.toggle('urgent', urgent);
+}
+
+timerStartBtn.addEventListener('click', () => {
+  if (timerState.running) {
+    clearInterval(timerState.interval);
+    timerState.running = false;
+    timerStartBtn.textContent = 'Resume';
+  } else {
+    if (timerState.seconds === 0) { timerState.seconds = 60; renderTimer(); }
+    timerState.running = true;
+    timerStartBtn.textContent = 'Pause';
+    timerState.interval = setInterval(() => {
+      timerState.seconds--;
+      renderTimer();
+      if (timerState.seconds <= 0) {
+        clearInterval(timerState.interval);
+        timerState.running = false;
+        timerStartBtn.textContent = 'Done!';
+      }
+    }, 1000);
+  }
+});
+
+timerResetBtn.addEventListener('click', resetTimer);
+</script>
+</body>
+</html>
