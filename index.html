@@ -367,7 +367,15 @@
     margin-bottom: 0.9rem;
   }
 
-  .confirm-btn {
+  .result-hint {
+    font-size: 13px; color: var(--ink-soft);
+    line-height: 1.5; margin-bottom: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--accent-light);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent);
+  }
+  .result-hint:empty { display: none; }
     width: 100%; padding: 0.75rem;
     background: var(--accent);
     color: #fff;
@@ -580,6 +588,7 @@
         <div class="result-card" id="result-card">
           <p class="result-label">&#10024; Your topic</p>
           <p class="result-topic" id="result-topic"></p>
+          <p class="result-hint" id="result-hint"></p>
           <button class="confirm-btn" id="confirm-btn">
             &#10003;&nbsp; Use this topic — remove from wheel
           </button>
@@ -611,10 +620,43 @@
     </div>
   </div>
 
+  <!-- SUBDECK MODAL -->
+  <div id="subdeck-overlay" style="display:none; position:fixed; inset:0; z-index:100; background:rgba(26,26,46,0.45); align-items:center; justify-content:center; padding:1.5rem;">
+    <div style="background:var(--paper-card); border-radius:var(--radius); padding:2rem 1.5rem; max-width:420px; width:100%; box-shadow:var(--shadow-lg); animation:popIn 0.25s cubic-bezier(.34,1.56,.64,1) both;">
+      <p style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:0.5rem;">Oberstufe</p>
+      <h3 style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;color:var(--ink);margin-bottom:0.3rem;">Choose a topic deck</h3>
+      <p style="font-size:14px;color:var(--ink-soft);margin-bottom:1.4rem;line-height:1.5;">Both decks have 20 topics. Pick one to load on the wheel.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;" id="subdeck-options"></div>
+      <button id="subdeck-cancel" style="margin-top:1rem;width:100%;padding:0.65rem;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink-soft);cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
 const TOPICS = {
+  5: [
+    "My favorite toy",
+    "A pet I want",
+    "Things I draw",
+    "What I want to be when I grow up",
+    "My favorite song",
+    "The best cartoon",
+    "My best friend",
+    "A special birthday",
+    "What makes me happy",
+    "A fun day at the park",
+    "My favorite book",
+    "How to brush your teeth",
+    "My everyday breakfast",
+    "My favorite game to play outside",
+    "Things I do on the weekend",
+    "My favorite season",
+    "My favorite color",
+    "A trip to the beach",
+    "My family",
+    "My bedroom"
+  ],
   7: [
     "learning English","home schooling","your dream school","a new subject",
     "Africa","Europe","South America","Asia",
@@ -636,17 +678,109 @@ const TOPICS = {
     "life in ten years","life in 100 years","your favourite outdoor activity","street gangs",
     "dancing","Hip Hop","traditions","culture shock",
     "the latest news at school","a successful life","important events in your life","Instagram"
+  ],
+  os_creative: [
+    "If I could invent anything","Bringing my toy to life","What if there were no rules?",
+    "School under the ocean","My dream school","Life on another planet","A new holiday",
+    "A day as my pet","If I were the principal","My superpower",
+    "The best thing about being a kid","If I could meet a historical figure",
+    "My perfect day","A fantasy land","The world in 50 years",
+    "What if we could walk on clouds?","A magical adventure","Talking with plants",
+    "If I could time-travel","I am a superhero sidekick"
+  ],
+  os_eco: [
+    "Why do I turn off the lights when I leave a room","The most polluted place I've seen",
+    "Why animals need clean habitats","How I take care of my neighborhood","Planting a tree",
+    "Why oceans are important","My favorite outdoor place","Why you should walk to school",
+    "How long does trash take to disappear","How we save water",
+    "Why do I bring my bag when shopping","How I reuse things",
+    "Why you should feed birds in winter","How I convince my family to be more eco-friendly",
+    "A zero-waste lunch","The three Rs: Reduce, Reuse, Recycle",
+    "Why worms are important for soil","How can I reduce waste in my lunchbox",
+    "The importance of bees","Buying less to help the planet"
   ]
 };
 
+const HINTS = {
+  os_creative: {
+    "If I could invent anything": "What it will be and solve",
+    "Bringing my toy to life": "Choose your favorite toy",
+    "What if there were no rules?": "What would happen?",
+    "School under the ocean": "Describe the classrooms and learning experience",
+    "My dream school": "The building, classes, etc. that make it perfect",
+    "Life on another planet": "How you'll adapt",
+    "A new holiday": "Name it, pick a date, and describe how people celebrate",
+    "A day as my pet": "Place yourself in their perspective and imagine what they'd think",
+    "If I were the principal": "What will you change?",
+    "My superpower": "Talk about one you dream of",
+    "The best thing about being a kid": "What do you enjoy the most?",
+    "If I could meet a historical figure": "Who and what you'll ask them",
+    "My perfect day": "Plan the full day with people and activities",
+    "A fantasy land": "Plan a journey and imagine places you'd visit there",
+    "The world in 50 years": "How will everything change?",
+    "What if we could walk on clouds?": "What will you build up there?",
+    "A magical adventure": "Create a story with a beginning, journey, and resolution",
+    "Talking with plants": "What will they say about the world?",
+    "If I could time-travel": "Where you'll go and why",
+    "I am a superhero sidekick": "Who you'd help and what your role will be"
+  },
+  os_eco: {
+    "Why do I turn off the lights when I leave a room": "How it saves energy",
+    "The most polluted place I've seen": "How did it make you feel?",
+    "Why animals need clean habitats": "Explain what pollution does to animals",
+    "How I take care of my neighborhood": "What do you do to keep it green?",
+    "Planting a tree": "Why plants are important to us",
+    "Why oceans are important": "How oceans affect weather and air",
+    "My favorite outdoor place": "Describe the place and what could harm it",
+    "Why you should walk to school": "Discuss the benefits",
+    "How long does trash take to disappear": "Pick items and share how they decompose",
+    "How we save water": "Shorter showers or turning off taps",
+    "Why do I bring my bag when shopping": "What happens to plastic bags after use?",
+    "How I reuse things": "Show creative examples, like using jars or old clothes",
+    "Why you should feed birds in winter": "How can you help them to survive?",
+    "How I convince my family to be more eco-friendly": "One change you made at home",
+    "A zero-waste lunch": "What you'd pack and why",
+    "The three Rs: Reduce, Reuse, Recycle": "Give one example of each from your daily life",
+    "Why worms are important for soil": "What they do in gardens",
+    "How can I reduce waste in my lunchbox": "Plastic alternatives that you use",
+    "The importance of bees": "What they do and how to help them",
+    "Buying less to help the planet": "Describe what happens to stuff we throw away"
+  },
+  5: {
+    "My favorite toy": "Bring it to class and say why you love it",
+    "A pet I want": "Describe an animal you want as a pet",
+    "Things I draw": "Bring some of your drawings and explain them",
+    "What I want to be when I grow up": "Talk about what the job does and why it interests you",
+    "My favorite song": "Sing a little bit!",
+    "The best cartoon": "Describe the main character",
+    "My best friend": "Say your friend's name and things you do together",
+    "A special birthday": "What made it perfect?",
+    "What makes me happy": "Things that make you smile",
+    "A fun day at the park": "Who were you with?",
+    "My favorite book": "Come with the book and say why you love it",
+    "How to brush your teeth": "Show the steps and why it's important",
+    "My everyday breakfast": "Describe why you crave it every morning",
+    "My favorite game to play outside": "Explain the rules and why it's fun",
+    "Things I do on the weekend": "Talk about one or two activities",
+    "My favorite season": "Describe the weather",
+    "My favorite color": "Point to things in the classroom with the color",
+    "A trip to the beach": "How did you feel seeing water like that?",
+    "My family": "Describe your family and what makes you all special",
+    "My bedroom": "Your favorite thing in your room"
+  }
+};
+
 const GRADES = [
-  { label: "5",  sub: "Klasse 5",  key: null },
+  { label: "5",  sub: "Klasse 5",  key: 5 },
   { label: "6",  sub: "Klasse 6",  key: null },
   { label: "7",  sub: "Klasse 7",  key: 7 },
   { label: "8",  sub: "Klasse 8",  key: null },
   { label: "9",  sub: "Klasse 9",  key: null },
   { label: "10", sub: "Klasse 10", key: null },
-  { label: "OS", sub: "Oberstufe", key: null },
+  { label: "OS", sub: "Oberstufe", key: "os", subdecks: [
+    { key: "os_creative", label: "✨ Creative & Imaginative" },
+    { key: "os_eco",      label: "🌿 Eco & Environment" }
+  ]},
 ];
 
 const SEGMENT_COLORS = [
@@ -701,15 +835,41 @@ const wheelCenterBtn = document.getElementById('wheel-center-btn');
 // BUILD GRADE BUTTONS
 GRADES.forEach(g => {
   const btn = document.createElement('button');
-  btn.className = 'grade-btn' + (g.key === 7 ? ' grade-7' : '');
+  btn.className = 'grade-btn' + (g.key ? ' grade-7' : '');
   btn.innerHTML = `<span class="num">${g.label}</span><span class="lbl">${g.sub}</span>`;
   if (!g.key) {
     btn.innerHTML += `<span class="soon-tag">soon</span>`;
     btn.disabled = true;
   }
-  btn.addEventListener('click', () => startGrade(g));
+  btn.addEventListener('click', () => {
+    if (g.subdecks) showSubdeckModal(g);
+    else startGrade(g);
+  });
   gradeGrid.appendChild(btn);
 });
+
+// SUBDECK MODAL
+const subdeckOverlay = document.getElementById('subdeck-overlay');
+const subdeckOptions = document.getElementById('subdeck-options');
+document.getElementById('subdeck-cancel').addEventListener('click', () => { subdeckOverlay.style.display = 'none'; });
+subdeckOverlay.addEventListener('click', e => { if (e.target === subdeckOverlay) subdeckOverlay.style.display = 'none'; });
+
+function showSubdeckModal(g) {
+  subdeckOptions.innerHTML = '';
+  g.subdecks.forEach(sd => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'width:100%;padding:1rem 1.25rem;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--paper-warm);font-family:"DM Sans",sans-serif;font-size:15px;font-weight:600;cursor:pointer;color:var(--ink);text-align:left;transition:background 0.15s,border-color 0.15s;display:flex;align-items:center;gap:10px;';
+    btn.textContent = sd.label;
+    btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--paper-card)'; btn.style.borderColor = 'var(--border-strong)'; });
+    btn.addEventListener('mouseleave', () => { btn.style.background = 'var(--paper-warm)'; btn.style.borderColor = 'var(--border)'; });
+    btn.addEventListener('click', () => {
+      subdeckOverlay.style.display = 'none';
+      startGrade({ label: g.label, sub: sd.label, key: sd.key });
+    });
+    subdeckOptions.appendChild(btn);
+  });
+  subdeckOverlay.style.display = 'flex';
+}
 
 function shuffle(arr) {
   const a = [...arr];
@@ -875,6 +1035,8 @@ function doSpin() {
       state.spinning = false;
       state.currentTopic = state.remaining[winIndex];
       resultTopic.textContent = '…' + state.currentTopic;
+      const hint = HINTS[state.currentGrade.key] && HINTS[state.currentGrade.key][state.currentTopic];
+      document.getElementById('result-hint').textContent = hint || '';
       resultCard.style.display = 'block';
       timerWrap.style.display = 'block';
       updateChips();
